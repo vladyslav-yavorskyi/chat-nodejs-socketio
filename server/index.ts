@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
-const db = `mongodb+srv://vicktoria:test123@chat.wzg0wdk.mongodb.net/chat?retryWrites=true&w=majority`;
+const db = require('./db');
 const MessageMod = require('./models/messages');
 const ActiveMod = require('./models/actives');
 
