@@ -3,24 +3,15 @@ const app = express();
 const mongoose = require('mongoose');
 const db = require('./db');
 const MessageMod = require('./models/messages');
-const ActiveMod = require('./models/actives');
-
+const ActiveUser = require('./models/activeUser');
+const session = require('./session');
 const http = require('http').Server(app);
 const cors = require('cors');
 
 const PORT = 4000;
 
-mongoose
-  .connect(db, { useUnifiedTopology: true })
-  .then(() => {
-    http.listen(PORT, () => {
-      console.log(`Listening on server: ${PORT}`);
-      console.log(`http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => console.log(err));
-
 app.use(cors);
+app.use(session);
 
 const socketIO = require('socket.io')(http, {
   cors: {
@@ -35,7 +26,7 @@ socketIO.on('connection', (socket) => {
         socket.emit('outputMessages', result);
       })
       .catch((error) => {
-        console.log('Error mONGO', error);
+        console.log('Error Mongo', error);
       });
   });
 
@@ -60,23 +51,17 @@ socketIO.on('connection', (socket) => {
     });
   });
 
-  socket.on('loadUsers', () => {
-    ActiveMod.find().then((result) => {
-      socket.emit('activeUsers', result);
-    });
-  });
-
   // add new user
   socket.on('newUser', (data) => {
-    const user = new ActiveMod({
-      userName: data.userName,
+    const user = new ActiveUser({
+      username: data.userName,
       socketId: socket.id,
     });
 
     user.save().then(() => {
-      ActiveMod.find()
-        .then((result) => {
-          socketIO.emit('newUserResponse', result);
+      ActiveUser.find({})
+        .then((activeUsers) => {
+          socketIO.emit('activeUsers', activeUsers);
         })
         .catch((error) => console.log(error));
     });
@@ -84,15 +69,33 @@ socketIO.on('connection', (socket) => {
 
   socket.on('disconnect', (data) => {
     console.log('🔥: A user disconnected');
-    ActiveMod.deleteOne({ socketId: socket.id }).then((data) => {
-      console.log(data);
+    ActiveUser.findOneAndDelete({ socketId: socket.id }).then(() => {
+      ActiveUser.find({}).then((updatedActiveUsers) => {
+        socketIO.emit('activeUsers', updatedActiveUsers);
+      });
     });
-    // socket.on('leaveChat', (userName) => {
-    //   ActiveMod.deleteOne({ userName }).then(() => {
-    //     console.log(userName, ' was deleted');
-    //   });
-    // });
   });
 });
 
-app.get('/');
+app.get('/', (req, res, next) => {
+  req.session.user = {
+    uuid: '12234-2345-2323423',
+  }; //THIS SETS AN OBJECT - 'USER'
+  req.session.save((err) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.send(req.session.user); // YOU WILL GET THE UUID IN A JSON FORMAT
+    }
+  }); //THIS S
+});
+
+mongoose
+  .connect(db, { useUnifiedTopology: true, useNewUrlParser: true })
+  .then(() => {
+    http.listen(PORT, () => {
+      console.log(`Listening on server: ${PORT}`);
+      console.log(`http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => console.log(err));
