@@ -1,27 +1,26 @@
+require('dotenv').config();
+
 const sessionReq = require('express-session');
-const dbUrl = require('../db');
-const MongoDBStore = require('connect-mongo')(sessionReq);
+const dbUrl = require('../database');
+const MongoDBStore = require('connect-mongo');
 
 const MAX_AGE = 1000 * 60 * 60 * 3;
 
-const mongoDBstore = new MongoDBStore({
-  mongoUrl: dbUrl,
-  ttl: MAX_AGE,
-  autoRemove: 'native',
-});
-
-const init = () => {
+const initSession = () => {
   return sessionReq({
     secret: 'qwertyui123',
     resave: true,
-    store: mongoDBstore,
+    store: new MongoDBStore({
+      mongooseConnection: dbUrl.Mongoose.connection,
+      mongoUrl: process.env.DB_URI,
+    }),
     cookie: {
       maxAge: MAX_AGE,
       sameSite: false,
       secure: false,
     },
-    saveUninitialized: true,
+    saveUninitialized: false,
   });
 };
 
-module.exports = init();
+module.exports = initSession();
