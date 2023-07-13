@@ -1,4 +1,5 @@
 require('dotenv').config();
+export {};
 
 const express = require('express');
 const app = express();
@@ -6,56 +7,32 @@ const mongoose = require('mongoose');
 const session = require('./session');
 const cors = require('cors');
 const ioServer = require('./socket/index')(app);
+const userRoutes = require('./routes');
 
-const PORT = 4000;
+const PORT = process.env.PORT;
 
-// app.use(cors);
-app.use(express.json());
-app.use(session);
+const dbURI = process.env.DB_URI;
 
-app.get('/', (req, res, next) => {
-  req.session.user = {
-    uuid: '12234-2345-2323423',
-  }; //THIS SETS AN OBJECT - 'USER'
-  req.session.save((err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.send(req.session.user); // YOU WILL GET THE UUID IN A JSON FORMAT
-    }
-  }); //THIS SAVES THE SESSION.
-});
-app.get('/end', (req, res, next) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.send('Session is destroyed');
-    }
-  }); //THIS DESTROYES THE SESSION.
-});
+// connect to DB before start server
+(async () => {
+  try {
+    await mongoose.connect(dbURI, { useNewUrlParser: true });
+    console.log('MongoDB connected 🔥');
 
-// app.get('/name', (req, res) => {
-//   let name;
+    // hide from hackers what stack we use
+    app.disable('x-powered-by');
+    // app.use(cors);
+    app.use(express.json());
+    app.use(session);
 
-//   if (!req.session) {
-//     return res.status(404).send();
-//   }
+    const apiRouter = express.Router();
+    app.use('/api', apiRouter);
+    apiRouter.use('/users', userRoutes);
 
-//   name = req.session.user.name;
-
-//   return res.status(200).send({ name });
-// });
-
-mongoose
-  .connect(process.env.DB_URI, {
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-  })
-  .then(() => {
-    ioServer.listen(PORT, () => {
-      console.log(`Listening on server: ${PORT}`);
-      console.log(`http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => console.log(err));
+    app.listen(Number(PORT), () =>
+      console.log(`⚡ Listening on port http://localhost:${PORT}`)
+    );
+  } catch (err) {
+    console.log(err);
+  }
+})();

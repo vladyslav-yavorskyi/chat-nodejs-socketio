@@ -1,5 +1,5 @@
-const MessageMod = require('../database/schemas/messages');
-const UserMod = require('../database/schemas/user');
+const MessageMod = require('../schemas/messages');
+const UserMod = require('../schemas/user');
 
 const ioEvents = (socketIO) => {
   socketIO.on('connection', (socket) => {
