@@ -12,6 +12,7 @@ const initSession = () => {
     resave: true,
     store: new MongoDBStore({
       mongoUrl: process.env.DB_URI,
+      collection: 'session',
     }),
     cookie: {
       maxAge: MAX_AGE,

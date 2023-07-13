@@ -1,5 +1,8 @@
+export {};
+
 const { signUp } = require('../validation/user');
-import User from './user';
+const { parseError, sessionizeUser } = require('../util/helpers');
+const User = require('../schemas/user');
 const userRoutes = require('express').Router();
 
 userRoutes.post('', async (req, res) => {
@@ -11,13 +14,17 @@ userRoutes.post('', async (req, res) => {
       password,
     });
 
-    // save new user with validators
-
+    // save new user and sessionize our data
     const newUser = new User({ username, email, password });
+    const sessionUser = sessionizeUser(newUser);
     await newUser.save();
-    res.send({ userId: newUser.id, username });
+
+    req.session.user = sessionUser;
+    console.log(req.session);
+    res.send(sessionUser);
   } catch (err) {
-    res.status(400).send(err);
+    // send parsed Error; better to read
+    res.status(400).send(parseError(err));
   }
 });
 
