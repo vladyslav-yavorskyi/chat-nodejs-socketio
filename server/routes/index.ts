@@ -4,6 +4,7 @@ const { signUp } = require('../validation/user');
 const { parseError, sessionizeUser } = require('../util/helpers');
 const User = require('../schemas/user');
 const userRoutes = require('express').Router();
+const sessionRouter = require('./session');
 
 userRoutes.post('', async (req, res) => {
   try {
@@ -20,7 +21,6 @@ userRoutes.post('', async (req, res) => {
     await newUser.save();
 
     req.session.user = sessionUser;
-    console.log(req.session);
     res.send(sessionUser);
   } catch (err) {
     // send parsed Error; better to read
@@ -28,4 +28,4 @@ userRoutes.post('', async (req, res) => {
   }
 });
 
-module.exports = userRoutes;
+module.exports = { userRoutes, sessionRouter };
