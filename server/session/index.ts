@@ -23,4 +23,8 @@ const initSession = () => {
   });
 };
 
-module.exports = initSession();
+module.exports.session = {
+  saveUninitialized: false,
+  resave: false,
+};
+module.exports = initSession;

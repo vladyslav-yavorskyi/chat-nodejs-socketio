@@ -8,7 +8,7 @@ const { parseError, sessionizeUser } = require('../util/helpers');
 const sessionRouter = express.Router();
 
 // add session
-sessionRouter.post('', async (req, res) => {
+sessionRouter.post('', async (req, res, next) => {
   try {
     const { email, password } = req.body;
     await signIn.validateAsync({ email, password });
@@ -17,7 +17,12 @@ sessionRouter.post('', async (req, res) => {
       const sessionUser = sessionizeUser(user);
 
       req.session.user = sessionUser;
-      res.send(sessionUser);
+      await req.session.save((err) => {
+        if (err) throw err;
+        console.log(req.session, 'fds');
+
+        res.send(sessionUser);
+      });
     } else {
       throw new Error('Invalid login credentials');
     }
@@ -46,8 +51,12 @@ sessionRouter.delete('', ({ session }, res) => {
 });
 
 // check if user is logged in
-sessionRouter.get('', ({ session: { user } }, res) => {
-  res.send({ user });
+sessionRouter.get('/isAuth', async (req, res) => {
+  if (req.session.user) {
+    return res.json(req.session.user);
+  } else {
+    return res.status(401).json('unauthorize');
+  }
 });
 
 module.exports = sessionRouter;
