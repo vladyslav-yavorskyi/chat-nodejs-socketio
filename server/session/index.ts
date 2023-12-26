@@ -6,25 +6,26 @@ const MongoDBStore = require('connect-mongo');
 
 const MAX_AGE = 1000 * 60 * 60 * 3;
 
-const initSession = () => {
-  return sessionReq({
+const initSession = sessionReq({
+    name: 'session',
     secret: 'qwertyui123',
-    resave: true,
-    store: new MongoDBStore({
-      mongoUrl: process.env.DB_URI,
-      collection: 'session',
+    store: MongoDBStore.create({
+        mongoUrl: dbUrl,
+        collection: 'session',
     }),
     cookie: {
-      maxAge: MAX_AGE,
-      sameSite: false,
-      secure: false,
+        maxAge: MAX_AGE,
+        sameSite: true,
+        secure: false,
+        httpOnly: true,
     },
     saveUninitialized: false,
-  });
+});
+
+
+const corsConfig = {
+    origin: 'http://localhost:3000',
+    credentials: true,
 };
 
-module.exports.session = {
-  saveUninitialized: false,
-  resave: false,
-};
-module.exports = initSession;
+module.exports = {initSession, corsConfig};

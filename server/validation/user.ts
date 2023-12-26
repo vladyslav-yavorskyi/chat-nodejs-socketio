@@ -1,4 +1,4 @@
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 
 const email = Joi.string().email().required();
 const username = Joi.string().alphanum().min(3).max(30).required();
@@ -13,9 +13,9 @@ const signUp = Joi.object().keys({
   password,
 });
 
-const signIn = Joi.object().keys({
-  email,
-  password,
+const signIn = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
 });
 
 module.exports = { signIn, signUp };

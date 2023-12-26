@@ -7,15 +7,18 @@ const userRoutes = require('express').Router();
 
 userRoutes.post('', async (req, res) => {
   try {
+
     const { username, email, password } = req.body;
-    await signUp.validateAsync({
-      username,
-      email,
-      password,
-    });
+    console.log('req.body', req.body);
+    // await signUp.validateAsync({
+    //   username,
+    //   email,
+    //   password,
+    // });
 
     // save new user and sessionize our data
     const newUser = new User({ username, email, password });
+    console.log('newUser', newUser);
     const sessionUser = sessionizeUser(newUser);
     await newUser.save();
 

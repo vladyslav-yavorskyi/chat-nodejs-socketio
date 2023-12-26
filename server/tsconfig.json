@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
     "types": [
-      // ... your other types
+      "http",
       "node"
     ]
-  }
+  },
+  "files": [
+    "types.d.ts"
+  ]
 }
