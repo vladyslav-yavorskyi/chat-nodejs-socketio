@@ -1,30 +1,25 @@
-import {RedisClientType} from "redis";
-import {promisify} from "node:util";
-
 const redis = require('redis');
-const client: RedisClientType = redis.createClient();
 
+let redisClient;
 
-let saddAsync, sremAsync, smembersAsync;
+async function createRedisClient() {
+    redisClient = await redis.createClient({
+        url: process.env.REDIS_URL, // Use environment variables for configuration
+        // Add other configurations as necessary
+    });
 
-(
-    async () => {
-        try {
-            await client.connect();
+    await redisClient.on('error', (err) => console.error('Redis Client Error', err));
+    await redisClient.on('connect', () => console.log('Redis client connected'));
+    await redisClient.on('end', () => console.log('Redis client disconnected'));
 
-            client.on('connect', () => {
-                console.log('Redis client connected');
+    return redisClient;
+}
 
-                // Promisify the Redis commands for use with async/await
-                saddAsync = promisify(client.sAdd).bind(client);
-                sremAsync = promisify(client.sRem).bind(client);
-                smembersAsync = promisify(client.sMembers).bind(client);
-            });
-            console.log('Redis connected 🔥');
-        } catch (err) {
-            console.log(err);
+module.exports = {
+    getRedisClient: async () => {
+        if (!redisClient) {
+            redisClient = await createRedisClient();
         }
-    }
-)();
-
-module.exports = {client, saddAsync, sremAsync, smembersAsync};
+        return redisClient;
+    },
+};

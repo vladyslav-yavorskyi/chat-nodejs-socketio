@@ -1,9 +1,10 @@
 import {Server, Socket} from "socket.io";
+import {RedisClientType} from "redis";
 
-const {saddAsync, sremAsync, smembersAsync} = require('../redis/index');
 const MessageMod = require('../schemas/messages');
 const UserMod = require('../schemas/user');
-const client = require('../redis/index');
+
+// const redisClient = require('../index');
 
 
 interface User {
@@ -12,7 +13,7 @@ interface User {
 }
 
 
-const ioEvents = (socketIO: Server) => {
+const ioEvents = (socketIO: Server, redisClient: RedisClientType) => {
     socketIO.on('connection', async (socket: Socket) => {
         console.log(`⚡: ${socket.id} user just connected!`);
         // @ts-ignore
@@ -20,11 +21,23 @@ const ioEvents = (socketIO: Server) => {
 
         // Add the user's ID to the Redis set
         // @ts-ignore
-        await saddAsync('active_users', socket.request.session.user.id);
-
+        const fieldsAdded = await redisClient.hSet(
+            'bike:1',
+            {
+                // @ts-ignore
+                user: socket.request.session.user.username,
+                brand: 'Ergonom',
+                type: 'Enduro bikes',
+                price: 4972,
+            },
+        )
+        console.log(`Number of fields were added: ${fieldsAdded}`);
+        const bike = await redisClient.hGetAll('bike:1');
+        console.log(bike);
         // Emit the list of active users
-        const activeUsers = await smembersAsync('active_users');
-        socketIO.emit('activeUsers', activeUsers);
+        // let activeUsers = await redisClient.hGetAll('active_users')
+        // console.log(JSON.stringify(activeUsers, null, 2));
+        // socketIO.emit('activeUsers', activeUsers);
 
         socket.on('loadMessages', async () => {
             try {
@@ -65,13 +78,10 @@ const ioEvents = (socketIO: Server) => {
         });
 
         socket.on('disconnect', async () => {
-            // Remove the user's ID from the Redis set
-            // @ts-ignore
-            await sremAsync('active_users', socket.request.session.user.id);
 
+            // @ts-ignore
+            // await redisClient.sRem('active_users', {username: socket.request.session.user.username});
             // Emit the updated list of active users
-            const updatedActiveUsers = await smembersAsync('active_users');
-            socketIO.emit('activeUsers', updatedActiveUsers);
             console.log('🔥: A user disconnected');
         });
     });

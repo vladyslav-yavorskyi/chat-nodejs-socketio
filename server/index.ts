@@ -1,6 +1,3 @@
-import {createClient} from "redis";
-import {createAdapter} from "@socket.io/redis-adapter";
-
 require('dotenv').config();
 export {};
 
@@ -13,26 +10,29 @@ const ioSocket = require('./socket/index');
 const userRoutes = require('./routes/user');
 const sessionRoutes = require('./routes/session');
 const cookieParser = require('cookie-parser');
+const {getRedisClient} = require('./redis/index');
 
 const server = require('http').createServer(app);
 const {Server} = require('socket.io');
-
+const redis = require('redis');
 const PORT = process.env.PORT;
 const dbURI = process.env.DB_URI;
+
+let redisClient = redis.createClient();
 
 (async () => {
     try {
         mongoose.Promise = global.Promise;
         await mongoose.connect(dbURI, {useNewUrlParser: true});
+        // const redisClient = getRedisClient();
+
         console.log('MongoDB connected 🔥');
         const io = new Server(server, {
             cors: corsConfig,
         })
 
-        const pubClient = createClient({url: "redis://localhost:6379"});
-        const subClient = pubClient.duplicate();
 
-
+        await redisClient.connect().then(() => console.log('Redis client connected'));
         // hide from hackers what stack we use
         app.disable('x-powered-by');
         app.use(cors(corsConfig));
@@ -47,8 +47,7 @@ const dbURI = process.env.DB_URI;
         app.use('/api', apiRouter);
         apiRouter.use('/session', sessionRoutes);
         apiRouter.use('/users', userRoutes);
-        io.adapter(createAdapter(pubClient, subClient));
-        ioSocket(io);
+        ioSocket(io, redisClient);
 
         server.listen(Number(PORT), () =>
             console.log(`⚡ Listening on port http://localhost:${PORT}`)
