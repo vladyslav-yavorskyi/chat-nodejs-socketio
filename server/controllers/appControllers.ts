@@ -63,11 +63,11 @@ const deleteSession = asyncHandler(async (req, res, next) => {
 });
 
 const isAuth = (req, res) => {
-    if (req.session.isAuth) {
+    if (req?.session && req?.session?.isAuth) {
         console.log(req.session.isAuth, 'req.session.isAuth')
         res.send(true)
     } else {
-        console.log(req.session.isAuth, 'req.sefdfssion.isAuth')
+        console.log('req.isnot.isAuth')
         res.send(false);
     }
 }

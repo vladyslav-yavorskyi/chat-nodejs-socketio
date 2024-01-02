@@ -47,6 +47,7 @@ let redisClient = redis.createClient();
         app.use('/api', apiRouter);
         apiRouter.use('/session', sessionRoutes);
         apiRouter.use('/users', userRoutes);
+
         ioSocket(io, redisClient);
 
         server.listen(Number(PORT), () =>

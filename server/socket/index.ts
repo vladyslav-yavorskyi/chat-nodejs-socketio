@@ -1,43 +1,24 @@
-import {Server, Socket} from "socket.io";
+import {Server} from "socket.io";
 import {RedisClientType} from "redis";
+import {SocketsWithSession} from "../types";
 
 const MessageMod = require('../schemas/messages');
 const UserMod = require('../schemas/user');
 
-// const redisClient = require('../index');
-
-
-interface User {
-    id: string;
-    name: any;
-}
-
 
 const ioEvents = (socketIO: Server, redisClient: RedisClientType) => {
-    socketIO.on('connection', async (socket: Socket) => {
+    socketIO.on('connection', async (socket: SocketsWithSession) => {
         console.log(`⚡: ${socket.id} user just connected!`);
-        // @ts-ignore
-        const user: User = {name: socket.request.session.user.username};
 
-        // Add the user's ID to the Redis set
-        // @ts-ignore
-        const fieldsAdded = await redisClient.hSet(
-            'bike:1',
-            {
-                // @ts-ignore
-                user: socket.request.session.user.username,
-                brand: 'Ergonom',
-                type: 'Enduro bikes',
-                price: 4972,
-            },
+        await redisClient.sAdd(
+            'active_users',
+            socket.request.session.user.username
         )
-        console.log(`Number of fields were added: ${fieldsAdded}`);
-        const bike = await redisClient.hGetAll('bike:1');
-        console.log(bike);
-        // Emit the list of active users
-        // let activeUsers = await redisClient.hGetAll('active_users')
-        // console.log(JSON.stringify(activeUsers, null, 2));
-        // socketIO.emit('activeUsers', activeUsers);
+
+        const activeUsers = await redisClient.sMembers('active_users');
+        console.log(`Active users: ${activeUsers}`);
+
+        socketIO.emit('activeUsers', activeUsers);
 
         socket.on('loadMessages', async () => {
             try {
@@ -46,6 +27,14 @@ const ioEvents = (socketIO: Server, redisClient: RedisClientType) => {
             } catch (error) {
                 console.log(error);
             }
+        });
+
+        socket.on('typing', (username: string) => {
+            socket.broadcast.emit('userTyping', username);
+        });
+
+        socket.on('stopTyping', (username: string) => {
+            socket.broadcast.emit('userStoppedTyping', username);
         });
 
 
@@ -78,10 +67,10 @@ const ioEvents = (socketIO: Server, redisClient: RedisClientType) => {
         });
 
         socket.on('disconnect', async () => {
-
-            // @ts-ignore
-            // await redisClient.sRem('active_users', {username: socket.request.session.user.username});
-            // Emit the updated list of active users
+            await redisClient.sRem('active_users', socket.request.session.user.username);
+            // Emit the updated list of active users to all connected sockets
+            const activeUsers = await redisClient.sMembers('active_users');
+            socketIO.emit('activeUsers', activeUsers);
             console.log('🔥: A user disconnected');
         });
     });
