@@ -4,8 +4,8 @@ let redisClient;
 
 async function createRedisClient() {
     redisClient = await redis.createClient({
-        url: process.env.REDIS_URL, // Use environment variables for configuration
-        // Add other configurations as necessary
+        url: process.env.MODE === 'production' ? process.env.REDIS_URL : process.env.REDIS_URL_LOCAL,
+        legacyMode: true,
     });
 
     await redisClient.on('error', (err) => console.error('Redis Client Error', err));

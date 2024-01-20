@@ -9,12 +9,12 @@ const UserMod = require('../schemas/user');
 const ioEvents = (socketIO: Server, redisClient: RedisClientType) => {
     socketIO.on('connection', async (socket: SocketsWithSession) => {
         console.log(`⚡: ${socket.id} user just connected!`);
+        console.log(`🔥: ${socket.request.session.user.username} just connected!`);
 
         await redisClient.sAdd(
             'active_users',
             socket.request.session.user.username
         )
-
         const activeUsers = await redisClient.sMembers('active_users');
         console.log(`Active users: ${activeUsers}`);
 

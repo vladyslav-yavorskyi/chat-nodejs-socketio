@@ -19,12 +19,14 @@ const initSession = sessionReq({
         secure: false,
         httpOnly: true,
     },
+    resave: false,
     saveUninitialized: false,
 });
 
 
 const corsConfig = {
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost',
+    optionsSuccessStatus: 200,
     credentials: true,
 };
 

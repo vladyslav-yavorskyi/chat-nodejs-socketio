@@ -18,7 +18,9 @@ const redis = require('redis');
 const PORT = process.env.PORT;
 const dbURI = process.env.DB_URI;
 
-let redisClient = redis.createClient();
+let redisClient = redis.createClient({
+    url: process.env.REDIS_URL
+});
 
 (async () => {
     try {
@@ -31,7 +33,7 @@ let redisClient = redis.createClient();
             cors: corsConfig,
         })
 
-
+        console.log('Redis client connecting...', process.env.MODE === 'production' ? process.env.REDIS_URL : process.env.REDIS_URL_LOCAL)
         await redisClient.connect().then(() => console.log('Redis client connected'));
         // hide from hackers what stack we use
         app.disable('x-powered-by');

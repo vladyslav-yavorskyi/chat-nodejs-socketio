@@ -1,0 +1,36 @@
+version: '3'
+services:
+  backend:
+    hostname: "backend"
+    build: ./server
+    networks:
+      - chat-network
+    ports:
+      - "4000:4000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  frontend:
+    hostname: "frontend"
+    networks:
+      - chat-network
+    build: ./client
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  redis:
+    image: "redis:alpine"
+    networks:
+      - chat-network
+    hostname: "redischat"
+    command: [ "redis-server", "--bind", "redis", "--port", "6379" ]
+    ports:
+      - "6379:6379"
+networks:
+  chat-network:
+    driver: bridge
